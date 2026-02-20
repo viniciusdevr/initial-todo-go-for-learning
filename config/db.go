@@ -3,17 +3,43 @@ package config
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 func SetupDB() *sql.DB {
 
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error to connect with .env")
+	}
 
-	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPass, dbName)
+	cfg := mysql.NewConfig()
+	cfg.User = os.Getenv("DB_USER")
+	cfg.Passwd = os.Getenv("DB_PASSWORD")
+	cfg.Net = "tcp"
+	cfg.Addr = fmt.Sprintf("%s:%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"))
+	cfg.DBName = os.Getenv("DB_NAME")
+
+	connectionString := cfg.FormatDSN()
+
+	dbConnection, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		log.Fatal("Database connection error")
+	}
+
+	dbConnection.SetMaxOpenConns(10)
+	dbConnection.SetMaxIdleConns(10)
+	dbConnection.SetConnMaxLifetime(time.Minute * 3)
+
+	err = dbConnection.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Sucessfully connected do database")
+	return dbConnection
 }

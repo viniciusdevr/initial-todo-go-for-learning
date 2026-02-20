@@ -1,18 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/viniciusdevr/initial-todo-go-for-learning/config"
 )
 
 func main() {
 
-	mux := http.NewServeMux()
+	db := config.SetupDB()
+	defer db.Close()
 
-	mux.HandleFunc("/teste", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "hello\n")
-	})
-
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
