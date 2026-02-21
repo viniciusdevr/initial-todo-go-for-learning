@@ -31,7 +31,19 @@ func tasksNotDone(done bool, db *sql.DB) ([]models.Task, error) {
 	}
 
 	return routine, nil
+}
 
+func taskById(id int, db *sql.DB) (models.Task, error) {
+	var rout models.Task
+
+	row := db.QueryRow("SELECT * FROM tasks WHERE id = ?", id)
+	if err := row.Scan(&rout.Id, &rout.Title, &rout.Description, &rout.Done); err != nil {
+		if err == sql.ErrNoRows {
+			return rout, fmt.Errorf("taskById %d: no such task", id)
+		}
+		return rout, fmt.Errorf("taskById %d: %v", id, err)
+	}
+	return rout, nil
 }
 
 func main() {
@@ -39,11 +51,17 @@ func main() {
 	db := config.SetupDB()
 	defer db.Close()
 
-	routine, err := tasksNotDone(false, db)
+	// routine, err := tasksNotDone(false, db)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Printf("Routine found: %v\n", routine)
+
+	rout, err := taskById(2, db)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Routine found: %v\n", routine)
+	fmt.Printf("Task found: %v\n", rout)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
